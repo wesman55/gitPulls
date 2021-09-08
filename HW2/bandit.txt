@@ -1,0 +1,10 @@
+level0:
+bandit0
+ssh bandit0@imaal
+level1:
+6/Q2LbNWe5a4KTk8ymUVrKuQ2J8B+/2+
+BANDIT_LEVEL=1 ./level1
+level2:
+4utUC/pa/7fK5zU0Q3qPKPbmicmozKSc
+./level2 2>/dev/null
+level3:
