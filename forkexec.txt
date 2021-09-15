@@ -1,0 +1,246 @@
+Part 1:
+
+1. Exec.c begins by creating a char pointer to an array called newenviron and places the value NULL into that
+array. Then, the program prints out to stdout "Program (the name of the program being executed
+in this case ./exec if the program was run with the exec executable file or a different name if exec.c was
+compiled using a different executable file name) has pid (the pid of the process using getpid()). Sleeping."
+Hence, exec.c prints the name of the program executing, and the pid of the process using getpid(), and then 
+sleeps for 30 seconds using the sleep(30) method. Then, exec.c checks the number of arguments in argc 
+and if it is 1 or less, it means there is no other program or command to execute so it prints "No program to exec. 
+Exiting..." and then terminates. Conversely, if the number of arguments, argc, is greater than 1, then exec.c 
+prints "Running exec of (the name of the next program executable or command it will run that was given as the 
+second argument to exec.c in the argv[] array at position argv[1])". Then exec.c
+uses execve to execute another process that was given as the second argument to exec.c and is
+found at position argv[1] in the argv array. Execve also takes in the argument array of &argv[1] which 
+contains the argument array that will be used as the argument array for the next process and passes
+in newenviron as the array of environment variables for the next process. At this point, the next program or command
+found at argv[1] would begin to execute so exec.c would terminate and the new process
+would begin with the same pid (because exec.c used execve). If for some reason execve does not execute, 
+like for example an invalid program or command name was given, then exec.c prints "End of program 
+(name of executable file of exec.c)" and then terminates. Hence, exec.c primary behavior is to print the pid, sleep for
+30 seconds, and then attempt to use execve to begin a second process given in argv[1].
+
+2. The final print() statement would be executed if the program executable or command given in argv[1] cannot be executed
+using execve. Thus if execve fails to execute a new process, it will return then the last print() is executed. 
+Execve only returns if it fails or there is some problem. This is because execve
+begins an entirely new process so it will never return to the original process that called execve because that program 
+was replaced and overwritten by the new process. An example of this
+could be typing the command "./exec "hello" " into the command line which would execute exec.c, but the string "hello"
+is not a valid executable file or command, thus execve would not execute a new process and thus return, and then exec.c
+would reach the last print statement and print, "End of program "./exec" " Hence, the condition where the last print() statement
+would be executed would be if execve fails to start a new process given in argv[1] nd returns. 
+
+Part 2: 
+
+3. jfairba1@michigan:~/cs324/HW3/forkexec$ ./exec "/bin/cat"
+Program "./exec" has pid 1679627. Sleeping.
+Running exec of "/bin/cat"
+
+4. jfairba1@michigan:~/cs324/HW3/forkexec$ ps -p 1679627 o user,pid,ppid,state,ucmd
+USER         PID    PPID S CMD
+jfairba1 1679627 1677804 S exec
+jfairba1@michigan:~/cs324/HW3/forkexec$ ps -p 1679627 o user,pid,ppid,state,ucmd
+USER         PID    PPID S CMD
+jfairba1 1679627 1677804 S cat
+
+5. The similarities between the two ps commands is that they have the exact same user, pid, ppid, and state. This is
+because first, the same user, me jfairba1, stays the same. The pid and ppid are the same because exec.c uses execve 
+to run /bin/cat. The execve method runs the program executable or the given command with the same pid and ppid as the 
+currently running process. Execve literally replaces the currently running process with the new program with newly initialized
+stack, heap, and (initialized and uninitialized) data but the same pid and ppid. Hence, the ps shows that both 
+exec and cat have the same pid and ppid. The state for both is "S" meaning sleep. This is because exec.c has a sleep section
+for 30 seconds and it was during that section that the first ps call was made. The second ps call was made while cat was 
+running and cat stays in sleep until it is given input. Hence, in both ps commands the state is the same for this reason.
+The only difference between the two ps commands is the ucmd or command executed. The first is exec because that is the name
+of the executable file that was being executed during the first ps call. Conversely, the second ps call says, "cat" because cat
+is the command being executed during the second ps call. Hence, the outputs of both ps commands are the same except for the ucmd
+section.
+
+6. jfairba1@michigan:~/cs324/HW3/forkexec$ ./exec "hello"
+Program "./exec" has pid 1680580. Sleeping.
+Running exec of "hello"
+End of program "./exec".
+
+Exec.c reached the end of the program and printed, "End of program "./exec." The reason this happened is because I passed a
+nonexistent program as an argument. Thus, in exec.c, the execve program tried to start a new process using the program "hello"
+but the program did not exist so it returned. Execve only returns if it fails or there is some problem. This is becuase execve
+begins an entirely new process so it will never return to the original process that called execve because that program was replaced
+and overwritten. Hence, when execve returns after failing to execute the nonexistent program "hello" exec.c continues to run and
+it runs by printing the above message and then terminating. This is the explanation of what happened. 
+
+Part 3:
+
+7. Fork.c begins by creating an integer value called pid but does not set it equal to any integer value. Next,
+fork.c continues by printing out the statement, "Starting program: process has pid (the pid of the process using getpid())
+to stdout. It uses the getpid() method to get the pid of the process. Next, fork.c has an if statment that sets the variable pid
+equal to the value returned by the fork() method. Fork() creates a child process by duplicating the calling process and returns
+the pid of the child to the parent process and a pid of 0 to the child process. Fork() returns a pid less than 0 if there is a
+problem running fork(), hence the if statement in fork.c checks if pid < 0 in either the child or the parent and if it is, 
+fork.c prints out an error message to stderr that says, "Could not fork()" and then terminates. If the fork() method worked properly,
+both the child and parent processes continue. Next, both the parent and the child print to stdout, "Section A: pid (the pid of the process
+using getpid()). Hence, the parent and child will both print a different pid using getpid(), but the parent will print the same pid
+value that was printed earlier in the "Starting program" print statement. Next, fork.c sleeps the parent and child for 30 seconds using
+the sleep(30) method. Next, fork.c enters an if statement that if the variable pid is 0 (which will be true only in the child process)
+then, fork.c prints "Section B" to stdout and then sleeps for 30 seconds using the sleep(30) method. After the child is done sleeping,
+the child prints out "Section B done sleeping" to stdout and then the child terminates. The parent process on the other hand enters the else 
+statement which prints "Section C" to stdout and then sleeps for 60 seconds using the sleep(30) method twice. Then the parent process prints,
+"Section C done sleeping" and then terminates. Hence, the summary of the behavior of fork.c is that it starts a variable value pid, and then
+it creates a child process. Both the parent and child enter Section A, and then sleep, and after sleeping, the child enters Section B and the 
+parent processenters Section C.
+
+8. As described in the problem above. Both the child and parent processes run section A. The child process runs section B and the parent process runs
+section C. Neither the child nor the parent runs section D. 
+
+Part 4:
+
+9. 
+jfairba1@florida:~/cs324/HW3/forkexec$ ./fork
+Starting program; process has pid 2596325
+Section A;  pid 2596325
+Section A;  pid 2596326
+Section C
+Section B
+Section B done sleeping
+Section C done sleeping
+
+
+jfairba1@florida:~/cs324/HW3/forkexec$ ps --pid 2596325,2596326 o user,pid,ppid,state,ucmd --forest
+USER         PID    PPID S CMD
+jfairba1 2596325 2596313 S fork
+jfairba1 2596326 2596325 S  \_ fork
+
+
+jfairba1@florida:~/cs324/HW3/forkexec$ ps --pid 2596325,2596326 o user,pid,ppid,state,ucmd --forest
+USER         PID    PPID S CMD
+jfairba1 2596325 2596313 S fork
+jfairba1 2596326 2596325 Z  \_ fork <defunct>
+
+10. The similarities between the two ps commands are they have the same user for both as the user stayed the same the whole time.
+Another similarity is that the pid and ppid stayed the same. The pid "2596325" which was the parent process stayed the same with 
+ppid "2596313" and the pid "2596326" which was the child has the ppid of "2596325" which was the pid of the parent. Hence, both
+ps commands remained constant on their pid and ppid and the ppid of the child was the pid of the parent which was expected. The reason
+the pid and ppids all stayed the same was because the pid stays constant throughout a process, hence when the ps command was called,
+the same process were running thus it was expected that the pids would remain constant. Similarly, the ppid would stay constant as well,
+and because the parent created the child, the ppid of the child referenced the parent which was exactly as expected.
+Similarly, the cmd of fork stayed the same for both ps commands, and the --tree showed that the child process was beneath the
+parent process in the tree. This simiarity was also expected because the child would be beneath the parent process in the ancestry in 
+both ps commands. Also, the fork ucmd would be the same because both the parent and child were running the fork executable file when both 
+ps commands were called. Another thing that stayed the same was the state of the parent, which was "S" for sleep for both
+ps commands which was expected as the parent process was in sleep mode when both ps commands were called. 
+The first difference between ps commands was in the child which has an "S" state for sleep in the first ps command
+and a "Z" for zombie in the second ps command. The reason for that difference is that after the line "Section B done sleeping"
+was printed, the child process terminated. Thus the child entered a zombie state as it was not reaped by the parent and thus was in 
+a zombie state waiting to be reaped. Similarly, in the second ps command, the child process had the <defunct> tag next to its fork 
+ucmd in the tree. This <defunct> tag is because the child was in that zombie state, waiting to be reaped. These were the similarities and
+differences between the outputs of the two ps commands and the reasons for each. 
+
+11. There are two lines of code to add to fork.c to eliminate the process with state "Z" from the output of the ps command. The first
+is to add "int child_status" to the beggining of fork.c. The second line is to add "wait(&child_status);" in the else statment that marks
+section C of the code. This statement will reap the zombie child process once it terminates, and wait until the child terminates to do so.
+Thus, the "wait(&child_status) needs to be in section C and I put it above the sleep methods to make sure it waited correctly for the child
+to terminate and then reap it. This statement needs to be in section C because section C is only reached by the parent, thus it makes sure
+that the parent reaps the child. I also included both the sys/wait.h and sys/types.h files at the beginning of fork.c to be able to use the 
+wait method. 
+
+12.
+jfairba1@florida:~/cs324/HW3/forkexec$ ./fork
+Starting program; process has pid 2602196
+Section A;  pid 2602196
+Section A;  pid 2602197
+Section C
+Section B
+Section C done sleeping
+jfairba1@florida:~/cs324/HW3/forkexec$ Section B done sleeping
+
+jfairba1@florida:~/cs324/HW3/forkexec$ ps --pid 2602196,2602197 o user,pid,ppid,state,ucmd --forest
+USER         PID    PPID S CMD
+jfairba1 2602196 2602188 S fork
+jfairba1 2602197 2602196 S  \_ fork
+
+jfairba1@florida:~/cs324/HW3/forkexec$ ps --pid 2602196,2602197 o user,pid,ppid,state,ucmd --forest
+USER         PID    PPID S CMD
+jfairba1 2602197       1 S fork
+
+13. The similarities between the two ps commands are first, the user stays consist throughout which makes sense. The main difference comes
+in the fact that the first ps command displays both the parent and child processes with pid "2602196" and ppid "2602188" for the parent and
+pid "2602197" with ppid "2602196" for the child (the child'd ppid is the pid of the parent which was expected). However, the second ps command
+only displays the child process with the same pid as before (2602196) but with ppid "1". This is because, by sleeping more in section B, the
+parent process terminates first and leaves the child sleeping. Thus the child process has to continue executing in the background after the 
+parent process terminated. When a parent process terminates, the kernel arranges for the init process to become the adopted parent of any orphaned 
+children. The init process, which has a PID of 1, is created by the kernel during system start-up, never terminates,
+and is the ancestor of every process. Hence, when the parent terminated first, the child became orphaned thus it was adopted by init with pid of 1,
+thus the child ppid was changed to 1. The state of the child and the parent in the first ps command is "S" for sleep and that was expected as the
+ps command was executed when both the parent and child were sleeping. The second ps command does not have the parent (as explained) but it does have 
+the child which is the same state of "S" because it is sleeping when the second ps command was called which was expected.
+The cmd also shows that both the parent and child were running the fork executable file which was expected and in the second ps command, the child
+was still executing fork which was expected. The first ps command also shows the child process under the parent in the ancestory heirarchy which was
+also expected. Hence, the major difference between the two ps commands was the absence of the parent process in the second, and the change of the 
+child's ppid to 1.
+
+Part 5:
+
+14. 
+jfairba1@florida:~/cs324/HW3/forkexec$ cat fork-output.txt
+BEFORE FORK
+SECTION A
+SECTION CSECTION A
+SECTION B
+
+15. 
+While writing to the file, the parent process wrote first. The parent wrote the SECTION A to the file and then SECTION C before the child wrote SECTION A
+and then SECTION B. You can know the parent wrote SECTION A first, because in order for the parent to write SECTION C to the file, it has to write SECTION A
+first, hence becuase there is only one SECTION A written the file before the SECTION C, this means that the parent must have written the SECTION A. Similarly, 
+we know then that the child process wrote the second SECTION A becuase the parent had to write the first, and the child wrote the SECTION B. Hence, I observed
+that the parent wrote the file first, finishing both writes, and then the child wrote second completing both writes.  
+
+16.
+jfairba1@florida:~/cs324/HW3/forkexec$ ./fork
+Starting program; process has pid 2610110
+Section A;  pid 2610110
+Section C
+Section A;  pid 2610111
+Section B
+Section B done sleeping
+Section C done sleeping
+hello from Section B
+
+17.
+jfairba1@florida:~/cs324/HW3/forkexec$ echo foobar | ./fork /bin/cat
+Starting program; process has pid 2611010
+Section A;  pid 2611010
+Section C
+Section A;  pid 2611011
+Section B
+Section B done sleeping
+Program "./fork" has pid 2611011. Sleeping.
+Running exec of "/bin/cat"
+foobar
+Section C done sleeping
+hello from Section B
+
+18. Output from running the command:
+jfairba1@florida:~/cs324/HW3/forkexec$ echo foobar | ./fork /bin/cat
+Starting program; process has pid 2612391
+Section A;  pid 2612391
+Section C
+Section A;  pid 2612392
+Section B
+Section B done sleeping
+Program "./fork" has pid 2612392. Sleeping.
+Running exec of "/bin/cat"
+Section C done sleeping
+hello from Section B
+
+
+Contents of fork-output.txt:
+BEFORE FORK
+SECTION A
+SECTION CSECTION A
+SECTION Bfoobar
+
+ 
+
+
+
+
+
