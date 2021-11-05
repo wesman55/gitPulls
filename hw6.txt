@@ -1,0 +1,192 @@
+Part 1: No concurrency
+
+1. 
+jfairba1@colorado:~/cs324/HW6/concurrency$  ps -Lo user,pid,ppid,nlwp,lwp,state,ucmd -C echoserveri | grep ^jfairba1\\\|USER
+USER         PID    PPID NLWP     LWP S CMD
+jfairba1 1076826 1076753    1 1076826 S echoserveri
+
+
+2. There is one process running. This can be identified by the fact that there is one PID returned
+by the ps command, the PID of 1076826. NLWP identifies the number of threads running in each process, and as
+shown in the output, the process is only running 1 thread. Hence, there is a total of 1 thread running. The thread
+has a LWP of 1076826. As can be identified, this LWP is the same as the PID of the
+process. This is because echoserveri has no input concurrency, thus it creates no threads besides the main thread
+which is the same ID as the process PID itself, hence there is only one process and one thread and the thread has the
+same LWP as the PID of 1076826. There is only one process shown in the ps command, because without concurrency, the server is
+only able to connect to one client at a time. Hence, only one of the clients started was able to connect with the server. Thus,
+the process with PID 1076826 is the server which is in state S which means that it is in sleep state, waiting for the client 
+to send more input so that it can echo it back. Hence, without concurrency, only one client
+connected to the server thus there was one process with one thread.
+
+3. After inputing "Ctrl-c" on the window in which "nc" was first executed to interrupt it, that client in the first pane
+stopped its connection to the server and then terminated. However, the second pane where nc was input was able to connect to
+the server because the server output a message that it had connected to a localhost, and then received 6 bytes from that client, 
+and then the client received the echo of the input it sent to the server, which in my case was the message "hello." Hence, by stopping
+the first nc command, the server was able to connect to the second client and receive data from that client and the second
+window output the message "hello" which was echoed from the server, while the server output that it had received 6 bytes 
+and connected to a new client. The third client in the third pane had no change as it could not connect to the server
+because the second client connected first and the server is only able to connect to one client at a time because it has no
+concurrency capability.
+
+Part 2: Process-based Concurrency
+
+4. jfairba1@maine:~/cs324/HW6/concurrency$  ps -Lo user,pid,ppid,nlwp,lwp,state,ucmd -C echoserverp | grep ^jfairba1\\\|USER
+USER         PID    PPID NLWP     LWP S CMD
+jfairba1 1603683 1600102    1 1603683 S echoserverp
+jfairba1 1603699 1603683    1 1603699 S echoserverp
+jfairba1 1603707 1603683    1 1603707 S echoserverp
+jfairba1 1603713 1603683    1 1603713 S echoserverp
+
+
+5. There are 4 processes running. This can be identified from the output where 4 distinct PIDs were returned by the ps command,
+PIDs of 1603683, 1603699, 1603707, and 1603713. The reason there are 4 processes is because of the fact that echoserverp is 
+using process-based concurrency. In process-based concurrency, the server is able to connect with more then one client by forking
+and then connecting to each indivdual client using a distinct child process. Hence, in this case because we had 3 clients, there
+was 3 forks creating 3 new processes and 1 for the parent process thus there is a total of 4 processes. This fact is further proven 
+by the fact that processes 1603699, 1603707, and 1603713 each have a PPID of 1603683 which is the PID of the first process, hence,
+1603699, 1603707, and 1603713 each were forked from the parent process of 1603683 and then used to connect to each client. The ps output
+also shows that there are 4 threads running with LWPs of 1603683, 1603699, 1603707, and 1603713 which exactly corresponds to the PIDs of
+the four processes. This is because in process-based concurrency, concurrency is handled solely by processes and thus extra threads are not
+created. Hence, each process is only running on its main thread, thus there are only 4 threads, one in each process, and the LWP of those
+threads is the same as the PID of the process. Hence, there are 4 processes, and 4 threads in total, one thread for each process. 
+
+Part 3: Simple Thread-based Concurrency:
+
+6. jfairba1@maine:~/cs324/HW6/concurrency$  ps -Lo user,pid,ppid,nlwp,lwp,state,ucmd -C echoservert | grep ^jfairba1\\\|USER
+USER         PID    PPID NLWP     LWP S CMD
+jfairba1 1605644 1600102    4 1605644 S echoservert
+jfairba1 1605644 1600102    4 1605652 S echoservert
+jfairba1 1605644 1600102    4 1605661 S echoservert
+jfairba1 1605644 1600102    4 1605669 S echoservert
+
+7. There is only one process running. This can be identified from the fact that in the output of the ps command, there is only one PID
+returned, a PID of 1605644. This makes sense because in thread-based concurrency, one process creates individual threads connected to the
+individual clients, but does so from only one process. Hence, in simple thread-based concurrency there is only one process and in our case
+that process has PID 1605644. There are 4 threads running. This can be identified by NLWP which outputs the number of threads running in 
+the process which in our case is 4. The threads has LWPs of 1605644, 1605652, 1605661, and 1605669. This makes sense because in thread-based
+concurrency, the main thread will create a thread for each connection to a client. We connected three clients, thus the server created 3
+threads, one for each client from the main thread with has the same LWP and the PID of the process, 1605644. Hence, there is one process, and
+4 threads.
+
+Part 4: Threadpool-based Concurrency
+
+8. jfairba1@maine:~/cs324/HW6/concurrency$  ps -Lo user,pid,ppid,nlwp,lwp,state,ucmd -C echoservert_pre | grep ^jfairba1\\\|USER
+USER         PID    PPID NLWP     LWP S CMD
+jfairba1 1606723 1600102   11 1606723 S echoservert_pre
+jfairba1 1606723 1600102   11 1606724 S echoservert_pre
+jfairba1 1606723 1600102   11 1606725 S echoservert_pre
+jfairba1 1606723 1600102   11 1606726 S echoservert_pre
+jfairba1 1606723 1600102   11 1606727 S echoservert_pre
+jfairba1 1606723 1600102   11 1606728 S echoservert_pre
+jfairba1 1606723 1600102   11 1606729 S echoservert_pre
+jfairba1 1606723 1600102   11 1606730 S echoservert_pre
+jfairba1 1606723 1600102   11 1606731 S echoservert_pre
+jfairba1 1606723 1600102   11 1606732 S echoservert_pre
+jfairba1 1606723 1600102   11 1606733 S echoservert_pre
+
+9. There is only one process running. This can be identified from the ps output which only output one PID, a PID of 1606723. This makes sense 
+because in Threadpool-base concurrency, a server will create a threadpool that holds multiple threads waiting for tasks to be allocated in order 
+to achieve concurrent execution by the supervising program. Hence, by this definition, the server's main process will create a pool of threads
+that are then allocated to connect to a client when a client tries to connect. In the code for echoservert_pre, the server creates a thread pool
+consisting of 10 threads which is set by the NTHREADS variable. The process makes the thread pool and then when a client connects, it tasks one
+of the threads in the thread pool to communicate with the client. Hence, the server only has one process with PID 1606723 that creates the pool thread
+which was expected. There are 11 threads running. This can be identified by the NLWP number which is 11 in the ps comand output for the process with
+PID 1606723. This is expected because as stated earlier, the echoservert_pre creates a thread pool of 10 threads with LWPs of 1606724, 1606725,
+1606726, 1606727, 1606728, 1606729, 1606730, 1606731, 1606732, and 1606733. There is also another thread with LWP of 1606723 which is the same number
+as the PID 1606723. This is the main thread that creates the other 10 threads. Hence, as the server has its main thread and then creates a threadpool
+containing 10 more threads, there is a total of 11 threads which was expected. Hence, there is one process and 11 threads running.
+
+Part 5: Concurrency Review
+
+10. echoserverp
+Pros: One major pro of Process-based Concurrency which is utlized by echoserverp is it helps to easily avoid unintended sharing between processes.
+When the parent process forks a child process to handle communication with a client, that child will have a completely private address space,
+thus the process with not have to worry about unintended sharing of address space between the processes possibly causing problems. Another major 
+pro to porcess-based concurrency is that the approach is more simple and straight forward then the thread-based apporaches. Forking the child is 
+very simple and easy to control because a child process will be an entirely seperate process, hence contributing to the simplicity. Thus, two pros
+of echoserverp are it is simple, and it helps to avoid unintended sharing between processes and communications with clients.
+
+Cons: One major con of Process-based Concurrency and echoserverp is there is high overhead in adding or removing clients. This is because each time a 
+client connects, the server must fork an entire process which can be very expensive in terms of memory resources. This is turn causes a high overhead
+to create the process, and remove it once the process has terminated. Another major con of echoserverp is it is very difficult to share resources between
+processes. This is because each process has its own address space and is its own process, thus it becomes difficult to share data between processes
+as global variable and other sharing mechanisms are not possible. Hence, the two primary cons of echoserverp is that it has high overhead in adding or
+removing clients, and it is hard to share resources between processes. 
+
+
+11. echoservert
+Pros: One major pro of Simple Thread-based Concurrency used in echoservert is that threads have very low overhead and thus are not very expensive in
+terms of memory to create and destroy. Hence, a server is able to connect to more clients while using less memory with the Simple Thread-based Concurrency
+approach then the process-based concurrency approach. Another significant pro is that Simple Thread-based Concurrency allows for easy sharing of data structures
+between threads. This is because threads occur within the same process that creates them. Thus, threads in the same process can share global varibles and
+can communicate with each other much easier then the seperate processes in proess-based concurrency. These are the two primary pros of Simple Thread-based
+Concurrency and echoservert, it is has low overhead, and allows for easy sharing of resources between threads.
+
+Cons:  One major con of Simple Thread-based Concurrency and echoservert is that using threads can produce unintentional sharing and can thus be extremely
+difficult to debug. This is because threads use the same heap and many other resources in the same address space as the other threads in a process,
+and though each thread has its own stack, those stacks are stored in the same place in memory, thus it can be easy to accidently and unintentionally
+share memory and resources that were not meantto be shared. Hence, this can lead to very difficult bugs and is thus difficult to debug.
+Furthermore, another major con is that threads do not have much control over scheduling policies. Threads are largely
+controlled by the kernel, hence the kernel often decides when threads run. Conversely, in process-based concurrency, 
+there are many tools to control scheduling. Hence, threads have this con that they do not have a much control over scheduling which can thus lead
+to other difficult bugs as the ordering of events is largely random thus it an be hard to debug an event that cannot easily be replicated. Hence, the primary 
+cons of Simple Thread-based Concurrency is that they are hard to debug when there are problems, there can be unintentional resources sharing, and there is not
+very much control over scheduling policies.
+
+
+12. echoservert_pre
+Pros: One major pro of Threadpool-based Concurrency used in echoservert_pre is the same as in simple thread-based concurrency, that there is low overhead in 
+creating and destroying threads. This is especially true in Threadpool-based Concurrency because a constant pool of threads is created at the beginning of the
+process, hence there is less overhead with having to create or destroy a thread each time a client connects or disconnects. Hence, Threadpool-based Concurrency
+can have less overhead then both process-based and simple thread-based concurrency. Simiarly, Threadpool-based Concurrency also has the advantage of simple 
+thread-based concurrency that it has an easy time sharing resources and variables between threads. Another pro is the fact that because there is a fixed number of
+threads, threads can be more easily controlled and manipulated as is needed. Hence, pros of Threadpool-based Concurrency in echoservert_pre include low overhead,
+easy sharing of resources, and larger control over the threads.
+
+Cons: Threadpool-based Concurrency and echoservert_pre share the same issues as simple thread-based concurrency. The first is that using threads can produce
+unintentional sharing between threads. This is because the threads run in the same process, thus it is possible to accidently share when it is not wanted.
+Similarly, Threadpool-based Concurrency has the same issues as simple thread-based concurrency of not being able to control scheduling easily, and is also can be
+difficult to debug if there were to be a subtle problems with the threads. On top of these cons, Threadpool-based Concurrency also has the disadvantage of only
+being able to use the set number of threads at a time. In echoservert_pre, the server creates 10 threads to handle connections with clients, however, if 10 clients
+connected then there could be issues if another client tried to connect or clients might not be able to connect at all. 
+While simple thread-based concurrency was able to scale more easily, Threadpool-based Concurrency has the con of not being able to scale
+as easily. Hence, Threadpool-based Concurrency has the cons of possible unintentional sharing,
+not being able to control scheduling, difficult debugging, and not being to scale as easily as simple thread-based concurrency.
+
+13. In the producer-consumer problem, a producer thread will repeatedly produce new items and insert them into the buffer that the consumer threads will
+repeatedly remove from the buffer and then use. Hence, in the echoservert_pre.c code, the server creates a buffer that it then passes in connfds, the 
+connected file descriptor returned once a client connects to the server, that the consumer threads then use to communicate with the clients. 
+Hence, in echoservert_pre.c the statement of code that represents the producer role is line 64 which is:
+
+ sbuf_insert(&sbuf, connfd); /* Insert connfd in buffer */
+
+this is where the producer thread puts the connfd into the buffer which the consumer threads can then use. Hence, in echoservert_pre.c there is only one
+producer thread. This is because only the main thread reaches line 64 in the code and is putting the connfds into the buffer. Hence, only the main 
+thread acts in the producer role, thus there is only one producer thread in echoservert_pre.c.
+
+14. In the producer-consumer problem, a producer thread will repeatedly produce new items and insert them into the buffer that the consumer threads will
+repeatedly remove from the buffer and then use. Hence, in the echoservert_pre.c code, the consumer threads are all of the threads that are in the while loop
+inside the void *thread(void *varp) method waiting to remove a connfd from the buffer and then use to communicate with a client. In the code, the server
+creates 10 threads that enter this while loop in the void *thread method. The specific statement of code represents the consumer role is in line 72 that says:
+
+                int connfd = sbuf_remove(&sbuf); /* Remove connfd from buffer */ //line:conc:pre:removeconnfd
+
+this statement is where the consumer threads remove the connfd from the buffer and then begin to use it, hence this is the specific statement of code that
+represents the consumer role. Because echoservert_pre creates 10 threads that go into this loop, there are 10 consumer threads. 
+
+15. On line 29, the code says:
+sem_wait(&sp->slots); 
+sem_wait acts as a P function. Hence, when slots is 0, then it will suspend until slots becomes nonzero (which will happen with a call to sem_post 
+which is equivalent to a V(s) function). Hence, because sem_wait acts as a P function, if slots is zero it will suspend until slots becomes nonzero.
+
+16. In the case that a single consumer thread is sleeping at line 42, waiting for a non-zero value of items, the line of code that will be executed 
+by a producer to wake that thread up is line 33 which says:
+
+    sem_post(&sp->items);                          /* Announce available item */
+
+this is because if a consumer thread is waiting at line 42, then it is waiting until items becomes nonzero. Hence, the only way for items to become
+nonzero is for a producer thread executing the sbuf_insert method to call sem_post(&sp->items). This is because sem_post acts as a V function, which 
+means it will increase items by 1. Hence, if there are any threads blocked at a P function (which is sem_wait()) then the V (sem_post) operation
+restarts one of those threads which then decrements slots and completes its operation. Hence, if a consumer thread is sleeping at line 42, then a
+producer thread executing line 33 will wake up the thread.
+
